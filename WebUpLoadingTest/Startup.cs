@@ -1,3 +1,4 @@
+using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -10,7 +11,20 @@ namespace WebUpLoadingTest
     {
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddControllersWithViews().AddRazorRuntimeCompilation();
+            //services.AddRazorPages(opt => opt.Conventions
+            //   .AddPageApplicationModelConvention(
+            //        "/FileUpload",
+            //        model =>
+            //        {
+            //            model.Filters.Add(new GenerateAntiforgeryTokenCookieAttribute());
+            //            model.Filters.Add(new DisableFormValueModelBindingAttribute());
+            //        })
+            //);
+
+            services.AddControllersWithViews()
+               .AddRazorRuntimeCompilation();
+
+            services.AddMediatR(typeof(Startup));
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
