@@ -16,6 +16,7 @@ namespace WebUpLoadingTest
             Host.CreateDefaultBuilder(args)
                 .ConfigureWebHostDefaults(host => host
                    .UseStartup<Startup>()
+                   .ConfigureKestrel((host, opt) => opt.Limits.MaxRequestBodySize = 1 * 1024 * 1024 * 1024)
                 )
             ;
     }

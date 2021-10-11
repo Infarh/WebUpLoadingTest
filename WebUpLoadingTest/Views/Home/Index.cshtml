@@ -6,6 +6,69 @@
     <h1 class="display-4">Welcome</h1>
 </div>
 
-<hr/>
+<hr />
 
+<form enctype="multipart/form-data">
+    <div id="progress-bar-file" class="progress"></div>
+    <input id="files" name="files" type="file" size="1" multiple onchange="uploadFiles('files');" />
+</form>
 
+@if (ViewBag.UploadsExist == true)
+{
+    <hr/>
+    <ul>
+        @foreach (var file in ViewBag.UploadFiles)
+        {
+            <li>
+                @file<form asp-controller="Home" asp-action="DeleteUploadedFile" asp-route-FileName="@file">
+                    <input type="submit" value="del." class="text-danger .link-button"/>
+                </form>
+            </li>
+        }
+    </ul>
+}
+
+@section Scripts
+{
+    <script>
+        function uploadFiles(inputId) {
+            const input = document.getElementById(inputId);
+            const files = input.files;
+            const formData = new FormData();
+
+            for (let i = 0; i !== files.length; i++) {
+                formData.append("files", files[i]);
+            }
+
+            $.ajax(
+                {
+                    url: "@Url.Action("UploadSimple", "Home")",
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    type: "POST",
+                    success: function (data) {
+                        alert("Files Uploaded!");
+                        window.location.reload(false);
+                    },
+                    error: function(){
+                        alert('error!');
+                    }
+                }
+            );
+        }
+    </script>
+}
+
+@section Styles
+{
+    <style>
+        .link-button { 
+            background: none;
+            border: none;
+            color: #1a0dab;
+            text-decoration: underline;
+            cursor: pointer; 
+        }
+    </style>
+}

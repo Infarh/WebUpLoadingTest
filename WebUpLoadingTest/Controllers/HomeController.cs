@@ -1,8 +1,14 @@
-﻿using System.Diagnostics;
+﻿using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net;
+using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
@@ -20,14 +26,37 @@ namespace WebUpLoadingTest.Controllers
 
         private readonly IMediator _Mediator;
         private readonly ILogger<HomeController> _Logger;
+        private readonly IWebHostEnvironment _HostingEnvironment;
 
-        public HomeController(IMediator Mediator, ILogger<HomeController> logger)
+        public HomeController(IWebHostEnvironment HostingEnvironment, IMediator Mediator, ILogger<HomeController> logger)
         {
             _Mediator = Mediator;
             _Logger = logger;
+            _HostingEnvironment = HostingEnvironment;
         }
 
-        public IActionResult Index() => View();
+        public IActionResult Index()
+        {
+            var upload = _HostingEnvironment.WebRootFileProvider.GetDirectoryContents("Uploads");
+            var upload_exists = ViewBag.UploadsExist = upload.Exists;
+            if (upload_exists) ViewBag.UploadFiles = upload.Select(f => f.Name);
+            return View();
+        }
+
+        [HttpPost]
+        public IActionResult DeleteUploadedFile(string FileName)
+        {
+            var upload = _HostingEnvironment.WebRootFileProvider.GetDirectoryContents("Uploads");
+            if (upload.Exists)
+            {
+                if (upload.FirstOrDefault(f => f.Name == FileName) is not { } file)
+                    return View(nameof(Index));
+                var server_file = new FileInfo(file.PhysicalPath);
+                server_file.Delete();
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error() => View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
@@ -39,7 +68,7 @@ namespace WebUpLoadingTest.Controllers
         [RequestFormLimits(MultipartBodyLengthLimit = MaxFileSize)]
         [ValidateAntiForgeryToken]
         [GenerateAntiforgeryTokenCookie]
-        public async Task<IActionResult> ReceiveFile()
+        public async Task<IActionResult> Upload()
         {
             if (!MultipartRequestHelper.IsMultipartContentType(Request.ContentType))
             {
@@ -95,5 +124,33 @@ namespace WebUpLoadingTest.Controllers
 
             return Created(nameof(HomeController), null);
         }
+
+        private const long MaxFileSize10 = 10L * 1024L * 1024L * 1024L;
+
+        [HttpPost]
+        [RequestSizeLimit(MaxFileSize10)]
+        [RequestFormLimits(MultipartBodyLengthLimit = MaxFileSize10)]
+        public async Task<IActionResult> UploadSimple(IList<IFormFile> files)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            foreach (var source in files)
+            {
+                var disposition = ContentDispositionHeaderValue.Parse(source.ContentDisposition);
+                var filename = disposition.FileName.Value.Trim('"');
+
+                filename = Path.GetFileName(filename);
+
+                var server_file = new FileInfo(Path.Combine(_HostingEnvironment.WebRootPath, "Uploads", filename));
+                if(!server_file.Directory!.Exists) server_file.Directory.Create();
+                await using var output = server_file.Create();
+                await source.CopyToAsync(output);
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        public IActionResult SingleFileUpload() => View();
     }
 }

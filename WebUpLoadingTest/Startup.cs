@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -20,6 +21,12 @@ namespace WebUpLoadingTest
             //            model.Filters.Add(new DisableFormValueModelBindingAttribute());
             //        })
             //);
+
+            services.Configure<FormOptions>(opt =>
+            {
+                // Set the limit to 256 MB
+                opt.MultipartBodyLengthLimit = 1 * 1024 * 1024 * 1024;
+            });
 
             services.AddControllersWithViews()
                .AddRazorRuntimeCompilation();
