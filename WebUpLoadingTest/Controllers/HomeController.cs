@@ -158,6 +158,9 @@ namespace WebUpLoadingTest.Controllers
         [RequestFormLimits(MultipartBodyLengthLimit = MaxFileSize10)]
         public async Task<IActionResult> SingleFileUpload(IFormFile file)
         {
+            if(file is null)
+                ModelState.AddModelError("file", "Не указан файл для загрузки");
+
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 

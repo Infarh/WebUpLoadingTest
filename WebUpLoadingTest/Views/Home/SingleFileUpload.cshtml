@@ -27,7 +27,7 @@
                     $('#progress-bar-file').width(percent + '%').html(percent + '%');
                 }
 
-                if(e.loaded == e.total){
+                if(e.loaded === e.total){
                     $('#progress-bar-file').width(100 + '%').html(100 + '%');
                 }
             });   
@@ -35,6 +35,9 @@
             request.open('post', '@Url.Action("SingleFileUpload", "Home")');
             request.timeout = 45000;
             request.send(formdata);
+            request.onload = () => {
+                window.location = "/";
+            };
         }
     </script>
 }
