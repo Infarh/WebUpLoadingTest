@@ -152,5 +152,34 @@ namespace WebUpLoadingTest.Controllers
         }
 
         public IActionResult SingleFileUpload() => View();
+
+        [HttpPost]
+        [RequestSizeLimit(MaxFileSize10)]
+        [RequestFormLimits(MultipartBodyLengthLimit = MaxFileSize10)]
+        public async Task<IActionResult> SingleFileUpload(IFormFile file)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            _Logger.LogInformation("Загрузка файла {FileName}", file.Name);
+
+            var timer = Stopwatch.StartNew();
+
+            var disposition = ContentDispositionHeaderValue.Parse(file.ContentDisposition);
+            var filename = disposition.FileName.Value.Trim('"');
+
+            filename = Path.GetFileName(filename);
+
+            var server_file = new FileInfo(Path.Combine(_HostingEnvironment.WebRootPath, "Uploads", filename));
+            if (!server_file.Directory!.Exists) server_file.Directory.Create();
+
+            await using var output = server_file.Create();
+            await file.CopyToAsync(output);
+
+            _Logger.LogInformation("Загрузка файла {FileName} выполнена успешно за {TotalTIme}c. Размер файла {FileSize}Байт",
+                file.Name, timer.Elapsed.TotalSeconds, file.Length);
+
+            return RedirectToAction(nameof(Index));
+        }
     }
 }

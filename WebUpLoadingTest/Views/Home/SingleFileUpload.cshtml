@@ -2,3 +2,39 @@
     ViewData["Title"] = "Загрузка одиночного файла";
 }
 
+<form id="form">
+    <input id="file" type="file" />
+    <div class="progress-wrapper">
+        <div id="progress-bar-file" class="progress"></div>
+    </div>
+    <button type="button" onclick="postFile()">Upload File</button>
+</form>
+
+@section Scripts{
+    <script>
+        function postFile() {
+            const formdata = new FormData();
+
+            formdata.append('file', $('#file')[0].files[0]);
+
+            const request = new XMLHttpRequest();
+
+            request.upload.addEventListener('progress', function (e) {
+                const fileSize = $('#file')[0].files[0].size;
+
+                if (e.loaded <= fileSize) {
+                    const percent = Math.round(e.loaded / fileSize * 100);
+                    $('#progress-bar-file').width(percent + '%').html(percent + '%');
+                }
+
+                if(e.loaded == e.total){
+                    $('#progress-bar-file').width(100 + '%').html(100 + '%');
+                }
+            });   
+
+            request.open('post', '@Url.Action("SingleFileUpload", "Home")');
+            request.timeout = 45000;
+            request.send(formdata);
+        }
+    </script>
+}
