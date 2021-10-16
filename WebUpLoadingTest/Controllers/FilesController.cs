@@ -25,11 +25,9 @@ namespace WebUpLoadingTest.Controllers
 
         public IActionResult Index() => View();
 
-        private const long MaxFileSize10 = 20L * 1024L * 1024L * 1024L;
-
         private static readonly string[] __DataLength = { "B", "kB", "MB", "GB", "PB", "EB" };
 
-        private static (double Length, string Unit, int Index) GetLenStr(long Length)
+        private static (double Length, string Unit) GetLenStr(long Length)
         {
             var index = (int)Math.Log(Length, 1024);
             var result = index switch
@@ -39,8 +37,10 @@ namespace WebUpLoadingTest.Controllers
                 2 => Length / 1048576d,
                 _ => Length / Math.Pow(1024, index)
             };
-            return (result, __DataLength[index], index);
+            return (result, __DataLength[index]);
         }
+
+        private const long MaxFileSize10 = 20L * 1024L * 1024L * 1024L;
 
         [HttpPost]
         [RequestSizeLimit(MaxFileSize10)]
@@ -99,7 +99,7 @@ namespace WebUpLoadingTest.Controllers
                                 while (!monitoring_cancel.IsCancellationRequested)
                                 {
                                     await Task.Delay(timeout, monitoring_cancel);
-                                    var (len, unit, _) = GetLenStr(total_readed);
+                                    var (len, unit) = GetLenStr(total_readed);
                                     _Logger.LogInformation("Прочитано {0:f2} {1}", len, unit);
                                 }
 
@@ -117,7 +117,7 @@ namespace WebUpLoadingTest.Controllers
                         }
                         while (readed > 0);
 
-                        var (readed_len, readed_unit, _) = GetLenStr(total_readed);
+                        var (readed_len, readed_unit) = GetLenStr(total_readed);
                         _Logger.LogInformation("Итого прочитано {0:f2} {1}", readed_len, readed_unit);
                     }
                     catch (BadHttpRequestException)
