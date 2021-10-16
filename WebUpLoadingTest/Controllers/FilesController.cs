@@ -1,7 +1,9 @@
 ﻿using System;
 using System.IO;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
+
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
@@ -24,6 +26,21 @@ namespace WebUpLoadingTest.Controllers
         public IActionResult Index() => View();
 
         private const long MaxFileSize10 = 20L * 1024L * 1024L * 1024L;
+
+        private static readonly string[] __DataLength = { "B", "kB", "MB", "GB", "PB", "EB" };
+
+        private static (double Length, string Unit, int Index) GetLenStr(long Length)
+        {
+            var index = (int)Math.Log(Length, 1024);
+            var result = index switch
+            {
+                0 => Length,
+                1 => Length / 1024d,
+                2 => Length / 1048576d,
+                _ => Length / Math.Pow(1024, index)
+            };
+            return (result, __DataLength[index], index);
+        }
 
         [HttpPost]
         [RequestSizeLimit(MaxFileSize10)]
@@ -66,25 +83,50 @@ namespace WebUpLoadingTest.Controllers
                     var body_length = body.Length;
                     _Logger.LogInformation("Для загрузки в потоке {0} байт", body_length);
 
+                    var cancellation = new CancellationTokenSource();
+                    var monitoring_cancel = cancellation.Token;
                     try
                     {
                         var buffer = new byte[1024 * 1024 * 20];
-                        var total_readed = 0;
+                        var total_readed = 0L;
                         var i = 0;
                         int readed;
+
+                        _ = Task.Run(
+                            async () =>
+                            {
+                                const int timeout = 500;
+                                while (!monitoring_cancel.IsCancellationRequested)
+                                {
+                                    await Task.Delay(timeout, monitoring_cancel);
+                                    var (len, unit, _) = GetLenStr(total_readed);
+                                    _Logger.LogInformation("Прочитано {0:f2} {1}", len, unit);
+                                }
+
+                                monitoring_cancel.ThrowIfCancellationRequested();
+                            },
+                            monitoring_cancel);
+
                         do
                         {
                             readed = await body.ReadAsync(buffer, 0, buffer.Length);
                             total_readed += readed;
-                            if (i++ % 20 == 0)
-                                _Logger.LogInformation("Прочитано {0} байт", total_readed);
+                            //if (i++ % buffer.Length == 0)
+                            //    _Logger.LogInformation("Прочитано {0:f2} MБайт", total_readed / 1048576f);
                             //if (i == 100) await Task.Delay(5000);
                         }
                         while (readed > 0);
+
+                        var (readed_len, readed_unit, _) = GetLenStr(total_readed);
+                        _Logger.LogInformation("Итого прочитано {0:f2} {1}", readed_len, readed_unit);
                     }
                     catch (BadHttpRequestException)
                     {
                         return BadRequest();
+                    }
+                    finally
+                    {
+                        cancellation.Cancel();
                     }
                 }
 

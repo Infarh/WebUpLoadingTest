@@ -2,9 +2,16 @@
 <form id="form">
     <div class="form-group">
         <label for="file-input">Example file input</label>
-        <input id="file-input" type="file" class="form-control-file"/>
+        <input id="file-input" type="file" class="form-control-file" />
 
-        <div id="progress-bar" class="progress"></div>
+        <div class="progress">
+            <div id="progress-bar" class="progress-bar" role="progressbar" style="width: 0%;"
+                 aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                0%
+            </div>
+        </div>
+
+        @*<div id="progress-bar" class="progress"></div>*@
         <button type="button" @*onclick="postFile()"*@ class="btn btn-primary mb-2">Загрузить</button>
         <span id="file-length">len</span>
     </div>
@@ -36,9 +43,12 @@
 
             request.upload.onprogress = e => setProgress(Math.round(e.loaded / e.total * 100));
             //request.onload = () => window.location = "/";
-            request.onload = () => alert("Completed");
+            request.onload = () => {
+                setProgress(100);
+                alert("Completed");
+            };
             request.ontimeout = () => alert("Timed out!!!");
-            request.timeout = 1500;
+            request.timeout = 60000;
 
             request.open('post', '@Url.Action("UploadSingle", "Files")', true);
             request.send(data);
@@ -48,7 +58,8 @@
         function setProgress(percent) {
             $("#progress-bar")
                 .width(percent + '%')
-                .html(percent + '%');
+                .html(percent + '%')
+                .attr("aria-valuenow", percent);
         }
     </script>
 }
