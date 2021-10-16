@@ -84,12 +84,12 @@ namespace WebUpLoadingTest.Controllers
             var reader = new MultipartReader(boundary, HttpContext.Request.Body);
 
             while (await reader.ReadNextSectionAsync() is { } section)
-                if (ContentDispositionHeaderValue.TryParse(section.ContentDisposition, out var content_disposition))
+                if (ContentDispositionHeaderValue.TryParse(section.ContentDisposition, out var position))
                 {
                     // Здесь проверяется наличие данных в файле.
                     // Если данных в форме нет, немедленно прерываем работу
                     // и устанавливаем сообщение об ошибке в модели
-                    if (!MultipartRequestHelper.HasFileContentDisposition(content_disposition))
+                    if (!MultipartRequestHelper.HasFileContentDisposition(position))
                     {
                         ModelState.AddModelError("File", "The request couldn't be processed (Error 2).");
                         _Logger.LogWarning("В поступившем запросе отсутствует информация о положении файла в потоке");
@@ -98,7 +98,7 @@ namespace WebUpLoadingTest.Controllers
 
                     // Не доверяем имени файла, передаваемого клиентом.
                     // Для отображения имени файла используется HTML-кодирование строки.
-                    var display_file = WebUtility.HtmlEncode(content_disposition!.FileName.Value);
+                    var display_file = WebUtility.HtmlEncode(position!.FileName.Value);
 
                     var random_file = Path.GetRandomFileName();
 
@@ -107,7 +107,7 @@ namespace WebUpLoadingTest.Controllers
                     // его содержимого. В реальном проекте
                     // служба антивируса должна быть использована до того, как файл станет доступным
                     // для скачивания, или использования другими системами. 
-                    var processing = new WalidateUploadingFileQuery(section, content_disposition, ModelState);
+                    var processing = new WalidateUploadingFileQuery(section, position, ModelState);
                     var file_content = await _Mediator.Send(processing);
 
                     if (!ModelState.IsValid)
@@ -138,11 +138,11 @@ namespace WebUpLoadingTest.Controllers
             foreach (var source in files)
             {
                 var disposition = ContentDispositionHeaderValue.Parse(source.ContentDisposition);
-                var filename = disposition.FileName.Value.Trim('"');
+                var file_name = disposition.FileName.Value.Trim('"');
 
-                filename = Path.GetFileName(filename);
+                file_name = Path.GetFileName(file_name);
 
-                var server_file = new FileInfo(Path.Combine(_HostingEnvironment.WebRootPath, "Uploads", filename));
+                var server_file = new FileInfo(Path.Combine(_HostingEnvironment.WebRootPath, "Uploads", file_name));
                 if(!server_file.Directory!.Exists) server_file.Directory.Create();
                 await using var output = server_file.Create();
                 await source.CopyToAsync(output);
@@ -169,11 +169,11 @@ namespace WebUpLoadingTest.Controllers
             var timer = Stopwatch.StartNew();
 
             var disposition = ContentDispositionHeaderValue.Parse(file.ContentDisposition);
-            var filename = disposition.FileName.Value.Trim('"');
+            var file_name = disposition.FileName.Value.Trim('"');
 
-            filename = Path.GetFileName(filename);
+            file_name = Path.GetFileName(file_name);
 
-            var server_file = new FileInfo(Path.Combine(_HostingEnvironment.WebRootPath, "Uploads", filename));
+            var server_file = new FileInfo(Path.Combine(_HostingEnvironment.WebRootPath, "Uploads", file_name));
             if (!server_file.Directory!.Exists) server_file.Directory.Create();
 
             await using var output = server_file.Create();

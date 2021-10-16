@@ -1,0 +1,54 @@
+﻿
+<form id="form">
+    <div class="form-group">
+        <label for="file-input">Example file input</label>
+        <input id="file-input" type="file" class="form-control-file"/>
+
+        <div id="progress-bar" class="progress"></div>
+        <button type="button" @*onclick="postFile()"*@ class="btn btn-primary mb-2">Загрузить</button>
+        <span id="file-length">len</span>
+    </div>
+</form>
+
+@section Scripts{
+    <script>
+        $("#form input").change(e => {
+            var units = ["B", "kB", "MB", "GB", "TB", "EB"];
+            var file = e.target.files[0];
+            var size = file.size;
+            var unitIndex = 0;
+            while (size >= 1024) {
+                unitIndex++;
+                size /= 1024.0;
+            }
+            $("#file-length").html(`${size.toFixed(2)} ${units[unitIndex]}`);
+            //alert(input);
+        });
+
+        $("#form button[type=button]").click(postFile);
+
+        function postFile() {
+            const data = new FormData();
+
+            data.append('file', $('#file-input')[0].files[0]);
+
+            const request = new XMLHttpRequest();
+
+            request.upload.onprogress = e => setProgress(Math.round(e.loaded / e.total * 100));
+            //request.onload = () => window.location = "/";
+            request.onload = () => alert("Completed");
+            request.ontimeout = () => alert("Timed out!!!");
+            request.timeout = 1500;
+
+            request.open('post', '@Url.Action("UploadSingle", "Files")', true);
+            request.send(data);
+
+        }
+
+        function setProgress(percent) {
+            $("#progress-bar")
+                .width(percent + '%')
+                .html(percent + '%');
+        }
+    </script>
+}
