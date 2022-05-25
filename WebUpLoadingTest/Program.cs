@@ -1,23 +1,48 @@
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Hosting;
+using MediatR;
+
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http.Features;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-namespace WebUpLoadingTest
-{
-    public class Program
-    {
-        public static async Task Main(string[] args)
-        {
-            var host = CreateHostBuilder(args).Build();
-            await host.RunAsync();
-        }
+var builder = WebApplication.CreateBuilder(args);
 
-        public static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args)
-                .ConfigureWebHostDefaults(host => host
-                   .UseStartup<Startup>()
-                   .ConfigureKestrel((host, opt) => opt.Limits.MaxRequestBodySize = 1 * 1024 * 1024 * 1024)
-                )
-            ;
-    }
+var configuration = builder.Configuration;
+var services = builder.Services;
+
+services.Configure<FormOptions>(opt =>
+{
+    // Set the limit to 256 MB
+    opt.MultipartBodyLengthLimit = 1 * 1024 * 1024 * 1024;
+});
+
+services.AddControllersWithViews()
+   .AddRazorRuntimeCompilation();
+
+services.AddMediatR(typeof(Program));
+
+var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseDeveloperExceptionPage();
 }
+else
+{
+    app.UseExceptionHandler("/Home/Error");
+}
+
+app.UseStaticFiles();
+
+app.UseRouting();
+
+app.UseAuthorization();
+
+app.UseEndpoints(endpoints =>
+{
+    endpoints.MapControllerRoute(
+        name: "default",
+        pattern: "{controller=Home}/{action=Index}/{id?}");
+});
+
+app.Run();
