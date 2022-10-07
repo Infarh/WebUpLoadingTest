@@ -12,7 +12,6 @@ var services = builder.Services;
 
 services.Configure<FormOptions>(opt =>
 {
-    // Set the limit to 256 MB
     opt.MultipartBodyLengthLimit = 1 * 1024 * 1024 * 1024;
 });
 

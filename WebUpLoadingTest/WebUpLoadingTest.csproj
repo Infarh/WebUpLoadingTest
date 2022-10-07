@@ -3,15 +3,23 @@
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
     <CopyRefAssembliesToPublishDirectory>false</CopyRefAssembliesToPublishDirectory>
+    <LangVersion>preview</LangVersion>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Handlers\Requests\**" />
+    <Content Remove="Handlers\Requests\**" />
+    <EmbeddedResource Remove="Handlers\Requests\**" />
+    <None Remove="Handlers\Requests\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="WebUpLoadingTest.Infrastructure.Extensions" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="MediatR.Extensions.Microsoft.DependencyInjection" Version="10.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="6.0.5" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Handlers\Requests\" />
   </ItemGroup>
 
 </Project>

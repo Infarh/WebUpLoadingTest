@@ -4,7 +4,7 @@
         <label for="file-input">Example file input</label>
         <input id="file-input" type="file" class="form-control-file" />
 
-        <div class="progress">
+        <div class="progress file-progress-bar">
             <div id="progress-bar" class="progress-bar" role="progressbar" style="width: 0%;"
                  aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
                 0%
@@ -41,18 +41,23 @@
 
             const request = new XMLHttpRequest();
 
-            request.upload.onprogress = e => setProgress(Math.round(e.loaded / e.total * 100));
+            request.upload.onprogress = e => {
+                //console.log("Send file " + e.loaded + "/" + e.total + " : " + e.loaded / e.total * 100 + "%");
+                setProgress(Math.round(e.loaded / e.total * 100));
+            };
             //request.onload = () => window.location = "/";
             request.onload = () => {
                 setProgress(100);
+                console.log("Sending file " + $('#file-input')[0].files[0] + " completed");
                 alert("Completed");
             };
             request.ontimeout = () => alert("Timed out!!!");
-            request.timeout = 60000;
+            request.timeout = 120000;
 
             request.open('post', '@Url.Action("UploadSingle", "Files")', true);
-            request.send(data);
 
+            console.log("Sending file " + $('#file-input')[0].files[0]);
+            request.send(data);
         }
 
         function setProgress(percent) {
