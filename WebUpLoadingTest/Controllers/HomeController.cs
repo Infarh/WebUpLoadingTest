@@ -64,10 +64,13 @@ public class HomeController : Controller
     private const long MaxFileSize = 1L * 1024L * 1024L * 1024L;
 
     [DisableFormValueModelBinding]
-    [RequestSizeLimit(100L * 1024L * 1024L * 1024L)]
-    [RequestFormLimits(MultipartBodyLengthLimit = 100L * 1024L * 1024L * 1024L)]
-    [ValidateAntiForgeryToken]
-    [GenerateAntiforgeryTokenCookie]
+    [HttpPost]
+    //[RequestSizeLimit(100L * 1024L * 1024L * 1024L)]
+    //[RequestFormLimits(MultipartBodyLengthLimit = 100L * 1024L * 1024L * 1024L)]
+    //[ValidateAntiForgeryToken]
+    //[GenerateAntiforgeryTokenCookie]
+    [RequestSizeLimit(MaxFileSize10)]
+    [RequestFormLimits(MultipartBodyLengthLimit = MaxFileSize10)]
     public async Task<IActionResult> Upload()
     {
         if (!MultipartRequestHelper.IsMultipartContentType(Request.ContentType))
